@@ -2,6 +2,9 @@ from typing import Any
 from PIL import Image
 from boid import Boid
 
+BOID_COLOR = (255, 255, 255)
+BOID_HEAD_COLOR = (245, 93, 227)
+
 class Simulation:
     def __init__(self, x_size: int = 350, y_size: int = 350, wrapping: bool = True, grid_size: int = 8):
         self.x_size = x_size
@@ -21,11 +24,6 @@ class Simulation:
     def step(self):
         for boid in self.boids:
             boid.move()
-        
-        for boid in self.boids:
-            clampX, clampY = self.mapX(boid.x_pos), self.mapY(boid.y_pos)
-            boid.x_pos = clampX
-            boid.y_pos = clampY
 
     def mapX(self, x):
         if self.wrapping:
@@ -46,12 +44,13 @@ class Simulation:
         raster: Any = grid.load()
 
         for boid in self.boids:
-            # draw boid as white
-            raster[int(boid.x_pos), int(boid.y_pos)] = (255, 255, 255)
+            mapX, mapY = self.mapX(round(boid.x_pos)), self.mapY(round(boid.y_pos))
+            raster[mapX, mapY] = BOID_COLOR
 
-            # draw boid heading as red
-            headX = self.mapX(int(boid.x_pos + boid.direction[0]))
-            headY = self.mapY(int(boid.y_pos + boid.direction[1]))
-            raster[headX, headY] = (255, 0, 0)
+            # draw boid heading
+            headX = self.mapX(round(boid.x_pos + boid.direction[0]))
+            headY = self.mapY(round(boid.y_pos + boid.direction[1]))
+
+            raster[headX, headY] = BOID_HEAD_COLOR
 
         return grid.resize((self.x_size * scale, self.y_size * scale), Image.NEAREST)
