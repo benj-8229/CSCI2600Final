@@ -1,3 +1,4 @@
+import math
 from typing import Any
 from PIL import Image
 from boid import Boid
@@ -25,31 +26,39 @@ class Simulation:
         for boid in self.boids:
             boid.move()
 
-    def mapX(self, x):
+    def map_x(self, x):
         if self.wrapping:
             x = x % self.x_size
         else:
             x = max(0, min(x, self.x_size - 1))
         return x
 
-    def mapY(self, y):
+    def map_y(self, y):
         if self.wrapping:
             y = y % self.y_size
         else:
             y = max(0, min(y, self.y_size - 1))
         return y
 
+    def dist_between_boids(self, a: Boid, b: Boid) -> float:
+        if self.wrapping:
+            pass
+
+        a_pos = [a.x_pos, a.y_pos]
+        b_pos = [b.x_pos, b.y_pos]
+        return math.dist(a_pos, b_pos)
+
     def draw(self, scale: int = 1) -> Image.Image:
         grid = self.grid.copy()
         raster: Any = grid.load()
 
         for boid in self.boids:
-            mapX, mapY = self.mapX(round(boid.x_pos)), self.mapY(round(boid.y_pos))
+            mapX, mapY = self.map_x(round(boid.x_pos)), self.map_y(round(boid.y_pos))
             raster[mapX, mapY] = BOID_COLOR
 
             # draw boid heading
-            headX = self.mapX(round(boid.x_pos + boid.direction[0]))
-            headY = self.mapY(round(boid.y_pos + boid.direction[1]))
+            headX = self.map_x(round(boid.x_pos + boid.direction[0]))
+            headY = self.map_y(round(boid.y_pos + boid.direction[1]))
 
             raster[headX, headY] = BOID_HEAD_COLOR
 
