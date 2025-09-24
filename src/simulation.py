@@ -10,45 +10,48 @@ class Simulation:
         self.grid_size = grid_size
         self.boids: list[Boid] = []
 
+        # draw grid
+        self.grid = Image.new("RGB", (self.x_size, self.y_size))
+        raster: Any = self.grid.load()
+        for x in range(0, self.x_size):
+            for y in range(0, self.y_size, 8):
+                raster[x, y] = (33, 33, 32)
+                raster[y, x] = (33, 33, 32)
 
     def step(self):
         for boid in self.boids:
             boid.move()
         
         for boid in self.boids:
-            if self.wrapping:
-                boid.x_pos = boid.x_pos % self.x_size
-                boid.y_pos = boid.y_pos % self.y_size
-                # self.wrap_boid_position(boid)
-            else:
-                boid.x_pos = min(boid.x_pos, self.x_size-1) # clamp right border
-                boid.x_pos = max(boid.x_pos, 0)             # clamp left border
-                boid.y_pos = min(boid.y_pos, self.y_size-1) # clamp bottom border
-                boid.y_pos = max(boid.y_pos, 0)             # clamp top border
+            clampX, clampY = self.mapX(boid.x_pos), self.mapY(boid.y_pos)
+            boid.x_pos = clampX
+            boid.y_pos = clampY
 
+    def mapX(self, x):
+        if self.wrapping:
+            x = x % self.x_size
+        else:
+            x = max(0, min(x, self.x_size - 1))
+        return x
 
-    def wrap_boid_position(self, boid: Boid):
-        if boid.x_pos < 0:
-            boid.x_pos += self.x_size
-        elif boid.x_pos >= self.x_size:
-            boid.x_pos -= self.x_size
-
-        if boid.y_pos < 0:
-            boid.y_pos += self.y_size
-        elif boid.y_pos >= self.y_size:
-            boid.y_pos -= self.y_size
-
+    def mapY(self, y):
+        if self.wrapping:
+            y = y % self.y_size
+        else:
+            y = max(0, min(y, self.y_size - 1))
+        return y
 
     def draw(self, scale: int = 1) -> Image.Image:
-        render = Image.new("RGB", (self.x_size, self.y_size))
-        raster: Any = render.load()
-
-        for x in range(0, self.x_size):
-            for y in range(0, self.y_size, 8):
-                raster[x, y] = (33, 33, 32)
-                raster[y, x] = (33, 33, 32)
+        grid = self.grid.copy()
+        raster: Any = grid.load()
 
         for boid in self.boids:
+            # draw boid as white
             raster[int(boid.x_pos), int(boid.y_pos)] = (255, 255, 255)
 
-        return render.resize((self.x_size * scale, self.y_size * scale), Image.NEAREST)
+            # draw boid heading as red
+            headX = self.mapX(int(boid.x_pos + boid.direction[0]))
+            headY = self.mapY(int(boid.y_pos + boid.direction[1]))
+            raster[headX, headY] = (255, 0, 0)
+
+        return grid.resize((self.x_size * scale, self.y_size * scale), Image.NEAREST)
