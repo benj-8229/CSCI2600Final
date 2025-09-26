@@ -1,23 +1,25 @@
-from random import randrange
+from random import randrange, random
 from image_helpers import ImageUtils
 from simulation import Simulation
 from boid import Boid
 
-FPS = 180
-SECONDS = 5
-BOIDS = 20
-BOID_SPEED = 20
+FPS = 60
+SECONDS = 60
+BOIDS = 69
+BOID_SPEED = 25
 SCALE = 4
 GRID_SIZE = 10
 SIZE = 153
 
 frames = []
 
-sim = Simulation(SIZE, SIZE)
-sim.boids = [Boid(randrange(0, SIZE - 1), randrange(0, SIZE - 1)) for _ in range(BOIDS)]
+sim = Simulation(SIZE, SIZE, (1.0 / FPS))
+sim.boids = [Boid(randrange(0, SIZE - 1), randrange(0, SIZE - 1), 1, sim) for _ in range(BOIDS)]
 
 for boid in sim.boids:
     boid.direction = Boid.deg2vec(randrange(0, 360))
+    boid.interpolated_dir = boid.direction
+    # boid.speed = (BOID_SPEED + 10 * random()) * (1.0 / FPS)
     boid.speed = BOID_SPEED * (1.0 / FPS)
 
 for i in range(FPS * SECONDS):

@@ -1,4 +1,5 @@
 import math
+from copy import deepcopy
 from typing import Any
 from PIL import Image
 from boid import Boid
@@ -7,9 +8,10 @@ BOID_COLOR = (255, 255, 255)
 BOID_HEAD_COLOR = (245, 93, 227)
 
 class Simulation:
-    def __init__(self, x_size: int = 350, y_size: int = 350, wrapping: bool = True, grid_size: int = 8):
+    def __init__(self, x_size: int = 350, y_size: int = 350, delta: float = 1 / 60, wrapping: bool = True, grid_size: int = 8):
         self.x_size = x_size
         self.y_size = y_size
+        self.delta = delta
         self.wrapping = wrapping
         self.grid_size = grid_size
         self.boids: list[Boid] = []
@@ -23,8 +25,12 @@ class Simulation:
                 raster[y, x] = (33, 33, 32)
 
     def step(self):
+        snapshot = deepcopy(self.boids)
+
         for boid in self.boids:
             boid.move()
+            boid.steer(snapshot)
+
 
     def map_x(self, x):
         if self.wrapping:
@@ -40,13 +46,51 @@ class Simulation:
             y = max(0, min(y, self.y_size - 1))
         return y
 
-    def dist_between_boids(self, a: Boid, b: Boid) -> float:
-        if self.wrapping:
-            pass
+    def boids_around_boid(self, boids: list[Boid], boid: Boid, r: float) -> list[Boid]:
+        out = []
 
-        a_pos = [a.x_pos, a.y_pos]
-        b_pos = [b.x_pos, b.y_pos]
-        return math.dist(a_pos, b_pos)
+        for other in boids:
+            if other != boid and self.dist_between_boids(boid, other) <= r:
+                    out.append(other)
+
+        return out
+
+    def dist_between_boids(self, a: Boid, b: Boid) -> float:
+        dx = abs(b.x_pos - a.x_pos)
+        dy = abs(b.y_pos - a.y_pos)
+
+        if not self.wrapping:
+            return math.sqrt(dx**2 + dy**2)
+
+        if dx > .5 * self.x_size:
+            dx -= self.x_size
+
+        if dy > .5 * self.y_size:
+            dy -= self.y_size
+
+        return math.sqrt(dx**2 + dy**2)
+
+    def dx_between_boids(self, a: Boid, b: Boid) -> float:
+        dx = b.x_pos - a.x_pos
+
+        if not self.wrapping:
+            return dx
+
+        if dx > .5 * self.x_size:
+            dx -= self.x_size
+
+        return dx
+
+    def dy_between_boids(self, a: Boid, b: Boid) -> float:
+        dy = b.y_pos - a.y_pos
+
+        if not self.wrapping:
+            return dy
+
+        if dy > .5 * self.y_size:
+            dy -= self.y_size
+
+        return dy
 
     def draw(self, scale: int = 1) -> Image.Image:
         grid = self.grid.copy()
