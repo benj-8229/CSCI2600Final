@@ -1,2 +1,2 @@
-# CSCI2600Final
-Final project for CSCI2600 - 2D Graphics
+# CSCI2620Final
+Final project for CSCI2620 - 2D Graphics
