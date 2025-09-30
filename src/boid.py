@@ -34,7 +34,7 @@ class Boid:
 
         aw = .8
         cw = .8
-        sw = 1
+        sw = .5
 
         ax, ay = self.alignment(others)
         cx, cy = self.cohesion(others)

@@ -4,12 +4,14 @@ from simulation import Simulation
 from boid import Boid
 
 FPS = 60
-SECONDS = 60
-BOIDS = 69
+SECONDS = 30
+BOIDS = 50
 BOID_SPEED = 25
 SCALE = 4
 GRID_SIZE = 10
 SIZE = 153
+
+print(f"Calculating {FPS * SECONDS} frames with a delta of {1.0/FPS}")
 
 frames = []
 
