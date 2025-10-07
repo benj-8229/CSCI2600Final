@@ -15,13 +15,13 @@ class Boid:
         self.interpolated_dir: tuple = (0, 0)
 
     def move(self):
-        self.interpolated_dir = self.lerp_vec(self.interpolated_dir, self.direction, 5 * self.sim.delta)
+        self.interpolated_dir = self.lerp_vec(self.interpolated_dir, self.direction, 7 * self.sim.delta)
         self.interpolated_dir = self.normalize_vec(self.interpolated_dir)
 
-        # self.x_pos += self.interpolated_dir[0] * self.speed
-        # self.y_pos += self.interpolated_dir[1] * self.speed
-        self.x_pos += self.direction[0] * self.speed
-        self.y_pos += self.direction[1] * self.speed
+        self.x_pos += self.interpolated_dir[0] * self.speed
+        self.y_pos += self.interpolated_dir[1] * self.speed
+        # self.x_pos += self.direction[0] * self.speed
+        # self.y_pos += self.direction[1] * self.speed
 
     def rotate(self, deg: float = 0):
         current_dir: float = Boid.vec2deg(self.direction)
@@ -65,12 +65,22 @@ class Boid:
         if not others:
             return (0, 0)
 
+        # Lerp towards average velocity (2.5% per second)
+        if len(others) > 3:
+            avg_vel = sum(b.speed for b in others) / len(others)
+            self.speed = max(30 * self.sim.delta, self.lerp_float(self.speed, avg_vel, .025 * self.sim.delta))
+
+        # Average position
         ax = sum(b.x_pos for b in others) / len(others)
         ay = sum(b.y_pos for b in others) / len(others)
         dx = ax - self.x_pos
         dy = ay - self.y_pos
         
         dist = math.sqrt(dx**2 + dy**2)
+
+        if (dist == 0):
+            return (0, 0)
+            # return self.direction
 
         nx, ny = dx / dist, dy / dist
 
@@ -118,6 +128,10 @@ class Boid:
 
         out = (vec[0] / magnitude, vec[1] / magnitude)
         return out
+
+    @staticmethod
+    def lerp_float(a, b, t) -> float:
+        return a * (b - a) * t
 
     @staticmethod
     def lerp_vec(a, b, t) -> tuple[float, float]:

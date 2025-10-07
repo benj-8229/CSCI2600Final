@@ -40,8 +40,8 @@ class ImageUtils:
         frames_dir = Path(out_path).with_suffix("").parent / "frames"
         frames_dir.mkdir(parents=True, exist_ok=True)
 
-        for i, f in enumerate(frames):
-            f.convert("RGB").save(frames_dir / f"frame_{i:06d}.png")
+        # for i, f in enumerate(frames):
+        #     f.convert("RGB").save(frames_dir / f"frame_{i:06d}.png")
 
         # Run ffmpeg
         cmd = [
