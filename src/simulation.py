@@ -26,12 +26,20 @@ class Simulation:
                 raster[y, x] = (33, 33, 32)
 
     def step(self):
-        snapshot = deepcopy(self.boids)
+        # create a snapshot without the circular reference to sim
+        snapshot = []
+        for boid in self.boids:
+            boid.sim = None
+            b = deepcopy(boid)
+            b.sim = None
+            boid.sim = self
+            snapshot.append(b)
+
+        for boid in self.boids:
+            boid.steer(snapshot)
 
         for boid in self.boids:
             boid.move()
-            boid.steer(snapshot)
-
 
     def map_x(self, x):
         if self.wrapping:
@@ -51,7 +59,8 @@ class Simulation:
         out = []
 
         for other in boids:
-            if other != boid and self.dist_between_boids(boid, other) <= r:
+            d = self.dist_between_boids(boid, other)
+            if other != boid and d > 1e-6 and d <= r:
                     out.append(other)
 
         return out
@@ -73,24 +82,21 @@ class Simulation:
 
     def dx_between_boids(self, a: Boid, b: Boid) -> float:
         dx = b.x_pos - a.x_pos
-
         if not self.wrapping:
             return dx
-
-        if dx > .5 * self.x_size:
-            dx -= self.x_size
-
+        # 3) symmetric wrap
+        half = 0.5 * self.x_size
+        if dx >  half: dx -= self.x_size
+        if dx < -half: dx += self.x_size
         return dx
 
     def dy_between_boids(self, a: Boid, b: Boid) -> float:
         dy = b.y_pos - a.y_pos
-
         if not self.wrapping:
             return dy
-
-        if dy > .5 * self.y_size:
-            dy -= self.y_size
-
+        half = 0.5 * self.y_size
+        if dy >  half: dy -= self.y_size
+        if dy < -half: dy += self.y_size
         return dy
 
     def draw(self, scale: int = 1) -> Image.Image:
