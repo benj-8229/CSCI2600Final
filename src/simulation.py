@@ -3,6 +3,7 @@ from copy import deepcopy
 from typing import Any
 from PIL import Image
 from boid import Boid
+from hsv import hsv_to_rgb
 
 BOID_COLOR = (255, 255, 255)
 BOID_HEAD_COLOR = (245, 93, 227)
@@ -97,6 +98,10 @@ class Simulation:
         raster: Any = grid.load()
 
         for boid in self.boids:
+            h = (Boid.vec2deg(boid.interpolated_dir) + 360) % 360
+            r, g, b = hsv_to_rgb(h, 1, 1)
+            BOID_HEAD_COLOR = (int(r * 255), int(g * 255), int(b * 255))
+    
             mapX, mapY = self.map_x(round(boid.x_pos)), self.map_y(round(boid.y_pos))
             raster[mapX, mapY] = BOID_COLOR
 
