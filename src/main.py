@@ -23,7 +23,7 @@ sim.boids = [Boid(randrange(0, SIZE - 1), randrange(0, SIZE - 1), 1, sim) for _ 
 for boid in sim.boids:
     boid.direction = Boid.deg2vec(randrange(0, 360))
     boid.interpolated_dir = boid.direction
-    boid.speed = (BOID_SPEED + 30 * random()) * (1.0 / FPS)
+    boid.speed = (BOID_SPEED + 20 * random()) * (1.0 / FPS)
     #boid.speed = BOID_SPEED * (1.0 / FPS)
 
 

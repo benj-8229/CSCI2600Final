@@ -3,7 +3,7 @@ import numpy as np
 from random import random
 
 FLOCK_DISTANCE = 15
-AVOIDANCE_DISTANCE = 4
+AVOIDANCE_DISTANCE = 7
 
 
 class Boid:
@@ -16,11 +16,15 @@ class Boid:
         self.interpolated_dir = np.array([0.0, 0.0], dtype=float)
 
     def move(self):
-        self.interpolated_dir = self.lerp_vec(self.interpolated_dir, self.direction, 6 * self.sim.delta)
+        self.interpolated_dir = self.lerp_vec(self.interpolated_dir, self.direction, 3 * self.sim.delta)
         self.interpolated_dir = self.normalize_vec(self.interpolated_dir)
 
         self.x_pos += self.interpolated_dir[0] * self.speed
         self.y_pos += self.interpolated_dir[1] * self.speed
+
+        if self.sim.wrapping:
+            self.x_pos %= self.sim.x_size
+            self.y_pos %= self.sim.y_size
 
     def rotate(self, deg: float = 0):
         current_dir: float = Boid.vec2deg(self.direction)
@@ -31,9 +35,9 @@ class Boid:
         others: list['Boid'] = self.sim.boids_around_boid(snapshot, self, FLOCK_DISTANCE)
         others_close: list['Boid'] = self.sim.boids_around_boid(snapshot, self, AVOIDANCE_DISTANCE)
 
-        aw = .9
-        cw = .7
-        sw = .3
+        aw = .3
+        cw = .5
+        sw = .4
 
         ax, ay = self.alignment(others)
         cx, cy = self.cohesion(others)

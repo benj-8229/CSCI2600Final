@@ -66,8 +66,8 @@ class Simulation:
         return out
 
     def dist_between_boids(self, a: Boid, b: Boid) -> float:
-        dx = abs(b.x_pos - a.x_pos)
-        dy = abs(b.y_pos - a.y_pos)
+        dx = b.x_pos - a.x_pos
+        dy = b.y_pos - a.y_pos
 
         if not self.wrapping:
             return math.sqrt(dx**2 + dy**2)
