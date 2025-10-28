@@ -2,12 +2,12 @@ import math
 import numpy as np
 from random import random
 
-FLOCK_DISTANCE = 15
-AVOIDANCE_DISTANCE = 7
+FLOCK_DISTANCE = 30
+AVOIDANCE_DISTANCE = 10
 
 
 class Boid:
-    def __init__(self, x_pos: int, y_pos: int, speed: float, sim: 'Simulation'):
+    def __init__(self, x_pos: int | float, y_pos: int | float, speed: float, sim: 'Simulation'):
         self.x_pos: float = float(x_pos)
         self.y_pos: float = float(y_pos)
         self.speed: float = speed
@@ -35,26 +35,23 @@ class Boid:
         others: list['Boid'] = self.sim.boids_around_boid(snapshot, self, FLOCK_DISTANCE)
         others_close: list['Boid'] = self.sim.boids_around_boid(snapshot, self, AVOIDANCE_DISTANCE)
 
-        aw = .3
-        cw = .5
+        aw = .5
+        cw = .4
         sw = .4
-        ww = .1
-        wind = (self.sim.noise[int(self.y_pos), int(self.x_pos)] - .5) * math.tau
+        ww = .2
+        wind = (self.sim.wind[int(self.y_pos), int(self.x_pos)])
 
         ax, ay = self.alignment(others)
         cx, cy = self.cohesion(others)
         sx, sy = self.separation(others_close)
-        wx, wy = math.cos(wind), math.sin(wind)
-        print(f"{wx} wx vs {sx} sx")
+        wx, wy = self.deg2vec(wind * 360)
 
-        fx = ax * aw + cx * cw + sx * sw
-        fy = ay * aw + cy * cw + sy * sw
+        fx = ax * aw + cx * cw + sx * sw * wx * ww
+        fy = ay * aw + cy * cw + sy * sw * wy * ww
 
         if fx*fx + fy*fy < 1e-5:
             return
 
-        fx = (fx * (1 - ww)) + (wx * ww)
-        fy = (fy * (1 - ww)) + (wy * ww)
         self.direction = self.normalize_vec(np.array([fx, fy], dtype=float))
 
     def alignment(self, others: list['Boid']) -> tuple[float, float]:

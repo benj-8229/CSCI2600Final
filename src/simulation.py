@@ -15,6 +15,8 @@ MOTION_BLUR = .85
 
 class Simulation:
     def __init__(self, x_size: int = 350, y_size: int = 350, delta: float = 1 / 60, wrapping: bool = True, grid_size: int = 8):
+        self.frame = 0
+
         self.x_size = x_size
         self.y_size = y_size
         self.delta = delta
@@ -28,6 +30,7 @@ class Simulation:
         self.noise_x = 0
         self.noise_y = 0
         self.noise = perlin(self.noise_x, self.noise_y, self.x_size, self.y_size)
+        self.wind = perlin(self.noise_x, self.noise_y, self.x_size, self.y_size, scale=.01, octaves=6, persistence=.5, lacunarity=1.5, seed=100)
 
         # draw grid
         self.grid = Image.new("RGB", (self.x_size, self.y_size))
@@ -40,8 +43,17 @@ class Simulation:
                 # raster[y, x] = (33, 33, 32)
 
     def step(self):
+        self.frame += 1
+
         self.noise_x += self.delta * 10
         self.noise_y += self.delta * 10
+
+        if self.frame % 3 == 0:
+            self.noise = perlin(self.noise_x, self.noise_y, self.x_size, self.y_size)
+            self.wind = self.noise * self.noise
+
+        # self.wind = perlin(self.noise_x * 2, self.noise_y * 2, self.x_size, self.y_size, scale=.045, octaves=2, persistence=.1, lacunarity=2, seed=100)
+        # self.wind *= perlin(self.noise_x * -2, self.noise_y * -2, self.x_size, self.y_size, scale=.045, octaves=2, persistence=.1, lacunarity=2, seed=100)
 
         # create a snapshot without the circular reference to sim
         snapshot = []
@@ -143,17 +155,13 @@ class Simulation:
             self.add_light(lightmap, round(boid.x_pos), round(boid.y_pos), tuple(c / 255 for c in head_color))
 
         # clamp lightmap between 0-1 and convert grid to an array in range 0-1
-        # lightmap = np.clip(lightmap, 0, 1)
-        self.noise = perlin(self.noise_x, self.noise_y, self.x_size, self.y_size)
         noise = np.repeat(self.noise[..., None], 3, axis=-1)
         base = np.asarray(grid, dtype=np.float32) / 255.0
-        base = np.clip(base + noise * 0.3, 0, 1)
+        base = np.clip(base + noise * .65, 0, 1)
 
         # add lightmap to motion blur buffer and then combine that with our base image
         self.accum_buffer = self.accum_buffer * MOTION_BLUR + lightmap * (1.0 - MOTION_BLUR)
-        # combined = np.clip(base + self.accum_buffer * 0.8, 0, 1)
-        # combination code for multiplicative rather than additive 
-        illumination = np.clip(self.accum_buffer * 1.5, 0, 1)
+        illumination = np.clip(self.accum_buffer * 1.2, 0, 1)
         combined = np.clip(base * (illumination + 0.2), 0, 2)
 
         # convert back to 0-255 image in RGB mode

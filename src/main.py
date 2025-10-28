@@ -3,14 +3,15 @@ from pathlib import Path
 from random import randrange, random
 from simulation import Simulation
 from boid import Boid
+from sys import stdout
 
 FPS = 60
-SECONDS = 5
-BOIDS = 50 * 1
+SECONDS = 3
+BOIDS = 50 * 3
 BOID_SPEED = 40
-SCALE = 6
+SCALE = 9
 GRID_SIZE = 10
-SIZE = 185 * 1
+SIZE = 300
 OUTPUT_PATH = "output/output.mp4"
 
 print(f"Calculating {FPS * SECONDS} frames with a delta of {1.0/FPS}")
@@ -32,6 +33,8 @@ for i in range(FPS * SECONDS):
     # frame = sim.draw(SCALE)
     frame = sim.draw(1)
     frame.convert("RGB").save(frames_dir / f"frame_{i:06d}.png")
+    print(".", end="")
+    stdout.flush()
 
 
 print(f"Rendering {FPS * SECONDS} frames...")
