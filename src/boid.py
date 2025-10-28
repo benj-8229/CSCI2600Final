@@ -23,8 +23,8 @@ class Boid:
         self.y_pos += self.interpolated_dir[1] * self.speed
 
         if self.sim.wrapping:
-            self.x_pos %= self.sim.x_size
-            self.y_pos %= self.sim.y_size
+            self.x_pos = (self.x_pos + self.sim.x_size) % self.sim.x_size
+            self.y_pos = (self.y_pos + self.sim.y_size) % self.sim.y_size
 
     def rotate(self, deg: float = 0):
         current_dir: float = Boid.vec2deg(self.direction)
@@ -38,10 +38,14 @@ class Boid:
         aw = .3
         cw = .5
         sw = .4
+        ww = .1
+        wind = (self.sim.noise[int(self.y_pos), int(self.x_pos)] - .5) * math.tau
 
         ax, ay = self.alignment(others)
         cx, cy = self.cohesion(others)
         sx, sy = self.separation(others_close)
+        wx, wy = math.cos(wind), math.sin(wind)
+        print(f"{wx} wx vs {sx} sx")
 
         fx = ax * aw + cx * cw + sx * sw
         fy = ay * aw + cy * cw + sy * sw
@@ -49,6 +53,8 @@ class Boid:
         if fx*fx + fy*fy < 1e-5:
             return
 
+        fx = (fx * (1 - ww)) + (wx * ww)
+        fy = (fy * (1 - ww)) + (wy * ww)
         self.direction = self.normalize_vec(np.array([fx, fy], dtype=float))
 
     def alignment(self, others: list['Boid']) -> tuple[float, float]:
@@ -72,16 +78,17 @@ class Boid:
             avg_vel = sum(b.speed for b in others) / len(others)
             self.speed = max(30 * self.sim.delta, self.lerp_float(self.speed, avg_vel, .75 * self.sim.delta))
 
-        # Average position
-        ax = sum(b.x_pos for b in others) / len(others)
-        ay = sum(b.y_pos for b in others) / len(others)
-        d = np.array([ax - self.x_pos, ay - self.y_pos], dtype=float)
+        ax = self.wrapped_mean([b.x_pos for b in others], self.sim.x_size)
+        ay = self.wrapped_mean([b.y_pos for b in others], self.sim.y_size)
+        dx = self.sim.dx_between_boids(self, Boid(ax, ay, self.speed, self.sim))
+        dy = self.sim.dy_between_boids(self, Boid(ax, ay, self.speed, self.sim))
 
-        dist = float(np.hypot(d[0], d[1]))
+        dist = math.hypot(dx, dy)
+
         if dist == 0.0:
             return (0.0, 0.0)
 
-        n = d / dist
+        n = np.array([dx / dist, dy / dist], dtype=float)
         magnitude = min(dist / FLOCK_DISTANCE, 1.0)
         n *= magnitude
 
@@ -102,6 +109,21 @@ class Boid:
 
         return (float(acc[0]), float(acc[1]))
 
+    def wrapped_mean(self, values, size):
+        angles = [(v / size) * 2 * math.pi for v in values]
+
+        sx = sum(math.cos(a) for a in angles)
+        sy = sum(math.sin(a) for a in angles)
+
+        if sx == 0.0 and sy == 0.0:
+            return size * 0.5  # fallback
+
+        mean_angle = math.atan2(sy, sx)
+        if mean_angle < 0.0:
+            mean_angle += 2 * math.pi
+
+        return (mean_angle / (2 * math.pi)) * size
+
     @staticmethod
     def deg2vec(deg: float):
         rad = np.radians(deg)
@@ -117,8 +139,9 @@ class Boid:
         v = np.asarray(vec, dtype=float)
         m = float(np.linalg.norm(v))
         if m == 0.0:
-            # keep original behavior (random)
-            return Boid.deg2vec(random() * 360.0)
+            theta = random() * 2 * np.pi
+            return np.array([np.cos(theta), np.sin(theta)])
+
         return v / m
 
     @staticmethod
